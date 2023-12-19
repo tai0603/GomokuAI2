@@ -193,7 +193,7 @@ class HeuristicGomokuAI:
 
 class Submission:
     def __init__(self, board_size, win_size):
-        self.heuristic_ai = HeuristicGomokuAI(board_size, win_size, lookahead_depth=2)
+        self.heuristic_ai = HeuristicGomokuAI(board_size, win_size, lookahead_depth=7)
 
     def __call__(self, state):
         current_player = state.current_player()  # Determine the current player from the state
