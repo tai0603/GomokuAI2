@@ -102,8 +102,29 @@ class HeuristicGomokuAI:
         if num_pieces == 2:
             return self.second_move_near_center(board, valid_actions)
 
-        # After the second move, prioritize moves near the AI's existing pieces
-        return self.get_moves_near_own_pieces(board, valid_actions)
+        # After the second move, prioritize moves based on the state of the game
+        if self.is_winning(board):
+            return self.get_aggressive_moves(board, valid_actions)
+        elif self.is_losing(board):
+            return self.get_defensive_moves(board, valid_actions)
+        else:
+            return self.get_moves_near_own_pieces(board, valid_actions)
+    
+    def is_winning(self, board):
+    # Check if the AI has more lines than the opponent
+        return self.count_lines(board, 2) > self.count_lines(board, 1)
+
+    def is_losing(self, board):
+        # Check if the opponent has more lines than the AI
+        return self.count_lines(board, 1) > self.count_lines(board, 2)
+
+    def get_aggressive_moves(self, board, valid_actions):
+        # Prioritize moves that create a line of the AI's pieces
+        return self.get_moves_that_create_line(board, valid_actions, 2)
+
+    def get_defensive_moves(self, board, valid_actions):
+        # Prioritize moves that block the opponent's lines
+        return self.get_moves_that_create_line(board, valid_actions, 1)
 
     def second_move_near_center(self, board, valid_actions):
         center_x, center_y = self.board_size // 2, self.board_size // 2
