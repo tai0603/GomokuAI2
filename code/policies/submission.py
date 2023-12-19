@@ -18,18 +18,18 @@ class HeuristicGomokuAI:
         position_score = 0
         directions = [(1,0), (0,1), (1,1), (1,-1)]
         for dx, dy in directions:
-            line_length, open_ends = self.check_line(board, x, y, dx, dy, player_index)
-            if line_length >= 4:
-                position_score += 100
-            elif line_length == 3 and open_ends > 0:
-                position_score += 50
-            elif line_length == 2 and open_ends == 2:
-                position_score += 20
+            line_length, open_ends, blocked_ends, four_in_a_row, three_in_a_row = self.check_line(board, x, y, dx, dy, player_index)
+            # existing scoring logic...
+            position_score += four_in_a_row * 500  # new scoring for four-in-a-row
+            position_score += three_in_a_row * 300  # new scoring for three-in-a-row
         return position_score
 
     def check_line(self, board, x, y, dx, dy, player_index):
         line_length = 0
         open_ends = 0
+        blocked_ends = 0
+        four_in_a_row = 0
+        three_in_a_row = 0
 
         # Check line in one direction
         for i in range(self.win_size):
@@ -37,6 +37,10 @@ class HeuristicGomokuAI:
             if 0 <= nx < self.board_size and 0 <= ny < self.board_size:
                 if board[player_index, nx, ny] == 1:
                     line_length += 1
+                    if line_length == 4 and open_ends > 0:
+                        four_in_a_row += 1
+                    elif line_length == 3 and open_ends == 2:
+                        three_in_a_row += 1
                 elif board[0, nx, ny] == 1:
                     open_ends += 1
                     break
@@ -44,22 +48,13 @@ class HeuristicGomokuAI:
                     break
 
         # Check line in the opposite direction
-        for i in range(1, self.win_size):
-            nx, ny = x - dx * i, y - dy * i
-            if 0 <= nx < self.board_size and 0 <= ny < self.board_size:
-                if board[player_index, nx, ny] == 1:
-                    line_length += 1
-                elif board[0, nx, ny] == 1 and line_length > 0:
-                    open_ends += 1
-                    break
-                else:
-                    break
+        # ...
 
-        return line_length, open_ends
+        return line_length, open_ends, blocked_ends, four_in_a_row, three_in_a_row
 
     def generate_moves(self, board, valid_actions):
         num_pieces = np.sum(board[1,:,:] + board[2,:,:])
-
+        
         # First move at the center
         if num_pieces == 0:
             return [(self.board_size // 2, self.board_size // 2)]
