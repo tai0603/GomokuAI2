@@ -2,9 +2,11 @@ import numpy as np
 import random
 
 class HeuristicGomokuAI:
-    def __init__(self, board_size, win_size):
+    def __init__(self, board_size, win_size, lookahead_depth):
         self.board_size = board_size
         self.win_size = win_size
+        self.lookahead_depth = lookahead_depth
+
 
     def evaluate_board(self, board, player_index):
         score = 0
@@ -51,6 +53,43 @@ class HeuristicGomokuAI:
         # ...
 
         return line_length, open_ends, blocked_ends, four_in_a_row, three_in_a_row
+
+    def minimax(self, board, depth, alpha, beta, maximizing_player):
+        if depth == 0 or self.game_over(board):
+            return self.evaluate_board(board, maximizing_player)
+
+        if maximizing_player:
+            max_eval = float('-inf')
+            for child in self.get_children(board, maximizing_player):
+                eval = self.minimax(child, depth - 1, alpha, beta, False)
+                max_eval = max(max_eval, eval)
+                alpha = max(alpha, eval)
+                if beta <= alpha:
+                    break
+            return max_eval
+        else:
+            min_eval = float('inf')
+            for child in self.get_children(board, not maximizing_player):
+                eval = self.minimax(child, depth - 1, alpha, beta, True)
+                min_eval = min(min_eval, eval)
+                beta = min(beta, eval)
+                if beta <= alpha:
+                    break
+            return min_eval
+    
+    def make_move(self, board):
+        best_score = float('-inf')
+        best_move = None
+        for x in range(self.board_size):
+            for y in range(self.board_size):
+                if board[0, x, y] == 0:  # if the cell is empty
+                    board[1, x, y] = 1  # make a move
+                    score = self.minimax(board, self.lookahead_depth, float('-inf'), float('inf'), False)
+                    board[1, x, y] = 0  # undo the move
+                    if score > best_score:
+                        best_score = score
+                        best_move = (x, y)
+        return best_move
 
     def generate_moves(self, board, valid_actions):
         num_pieces = np.sum(board[1,:,:] + board[2,:,:])
@@ -133,10 +172,28 @@ class HeuristicGomokuAI:
                 else:  # Opponent's piece or edge of board
                     return False
         return count == line_length - 1
+    
+    def get_children(self, board, player_index):
+        children = []
+        for x in range(self.board_size):
+            for y in range(self.board_size):
+                if board[0, x, y] == 0:  # if the cell is empty
+                    new_board = board.copy()
+                    new_board[player_index, x, y] = 1  # make a move
+                    children.append(new_board)
+        return children
+    
+    def game_over(self, board):
+        # Check rows, columns and diagonals for a winning line
+        for x in range(self.board_size):
+            for y in range(self.board_size):
+                if any(self.check_line(board, x, y, dx, dy, player_index) >= self.win_size for dx, dy in [(1,0), (0,1), (1,1), (1,-1)] for player_index in [1, 2]):
+                    return True
+        return False
 
 class Submission:
     def __init__(self, board_size, win_size):
-        self.heuristic_ai = HeuristicGomokuAI(board_size, win_size)
+        self.heuristic_ai = HeuristicGomokuAI(board_size, win_size, lookahead_depth=2)
 
     def __call__(self, state):
         current_player = state.current_player()  # Determine the current player from the state
