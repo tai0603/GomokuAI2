@@ -15,6 +15,17 @@ class HeuristicGomokuAI:
                 if board[player_index, x, y] == 1:
                     score += self.evaluate_position(board, x, y, player_index)
         return score
+    
+    def count_lines(self, board, player_index):
+        count = 0
+        for x in range(self.board_size):
+            for y in range(self.board_size):
+                if board[player_index, x, y] == 1:
+                    for dx, dy in [(1,0), (0,1), (1,1), (1,-1)]:
+                        line_length, _, _, _, _ = self.check_line(board, x, y, dx, dy, player_index)
+                        if line_length >= self.win_size:
+                            count += 1
+        return count
 
     def evaluate_position(self, board, x, y, player_index):
         position_score = 0
